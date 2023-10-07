@@ -4,7 +4,7 @@
 
 int main() {
     PathFinder pathFinder;
-    pathFinder.readDistancesFromFile("distances.txt");
+    pathFinder.readDistancesFromFile("../distances2.txt");
     auto best = pathFinder.findBestPath();
     auto length = pathFinder.getPathLength(best);
     for (auto node : best) {

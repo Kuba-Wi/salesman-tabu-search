@@ -1,6 +1,8 @@
 #include "pathFinder.hpp"
 
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -82,9 +84,26 @@ void PathFinder::cleanTabuList() {
     tabuCurrentIndex_ = 0;
 }
 
+void PathFinder::generateInitialPath(std::vector<size_t>& path) {
+    std::srand(std::time(nullptr));
+    size_t nodeIndex = 0;
+    for (size_t i = 1; i < path.size(); ++i) {
+        while (this->isNodeInPath(path, nodeIndex)) {
+            nodeIndex = std::rand() % path.size();
+        }
+        path[i] = nodeIndex;
+    }
+}
+
+bool PathFinder::isNodeInPath(const std::vector<size_t>& path, size_t node) {
+    return std::any_of(path.begin(), path.end(), [&](auto value){
+        return value == node;
+    });
+}
+
 std::vector<size_t> PathFinder::findBestPath() {
-    std::vector<size_t> path(distances_.size());
-    std::iota(path.begin(), path.end(), 0);
+    std::vector<size_t> path(distances_.size(), 0);
+    this->generateInitialPath(path);
     auto bestPath = path;
     size_t pathLength = this->getPathLength(path);
     size_t bestPathLength = pathLength;

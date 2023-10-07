@@ -15,6 +15,8 @@ private:
     std::pair<int, int> getBestNeighbour(std::vector<size_t>& path);
     void updateTabuList(const std::pair<int, int>& value);
     void cleanTabuList();
+    void generateInitialPath(std::vector<size_t>& path);
+    bool isNodeInPath(const std::vector<size_t>& path, size_t node);
 
     const size_t tabuListSize_ = 7;
     const size_t iterationsCount_ = 100;
