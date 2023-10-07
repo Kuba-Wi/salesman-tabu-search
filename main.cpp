@@ -5,9 +5,9 @@
 int main() {
     PathFinder pathFinder;
     pathFinder.readDistancesFromFile("../distances2.txt");
-    auto best = pathFinder.findBestPath();
-    auto length = pathFinder.getPathLength(best);
-    for (auto node : best) {
+    auto bestPath = pathFinder.findBestPath();
+    auto length = pathFinder.getPathLength(bestPath);
+    for (auto node : bestPath) {
         std::cout << node << " ";
     }
     std::cout << "\n";
