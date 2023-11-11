@@ -45,10 +45,38 @@ bool PathFinder::isOnTabuList(const std::vector<std::pair<int, int>>& tabuList, 
 }
 
 std::pair<int, int> PathFinder::getBestNeighbour(std::vector<size_t>& path, const std::vector<std::pair<int, int>>& tabuList) {
-    std::pair<int, int> bestNeighbour = emptyTabuFieldValue_;
-    size_t bestNeighbourLength = std::numeric_limits<size_t>::max();
+    constexpr size_t NEIGHBOUR_THREADS = 5;
+    std::vector<std::thread> neighbourThreadsVec;
+    std::vector<std::pair<int, int>> bestNeighbourVec(NEIGHBOUR_THREADS);
+    std::vector<size_t> bestNeighbourLengthVec(NEIGHBOUR_THREADS);
+    for (size_t i = 0; i < NEIGHBOUR_THREADS; ++i) {
+        neighbourThreadsVec.emplace_back(std::thread{&PathFinder::getBestNeighbourThreadFunction, 
+                                                     this, 
+                                                     path, 
+                                                     std::ref(tabuList), 
+                                                     (path.size() / NEIGHBOUR_THREADS) * i + 1,
+                                                     std::ref(bestNeighbourVec[i]),
+                                                     std::ref(bestNeighbourLengthVec[i])});
+    }
+
+    for (auto& th : neighbourThreadsVec) {
+        th.join();
+    }
+
+    auto bestLengthIt = std::min_element(bestNeighbourLengthVec.begin(), bestNeighbourLengthVec.end());
+    return bestNeighbourVec[bestLengthIt - bestNeighbourLengthVec.begin()];
+}
+
+void PathFinder::getBestNeighbourThreadFunction(std::vector<size_t> path, 
+                                                               const std::vector<std::pair<int, int>>& tabuList, 
+                                                               size_t firstNode,
+                                                               std::pair<int, int>& bestNeighbour,
+                                                               size_t& bestNeighbourLength) {
+
+    bestNeighbour = EMPTY_NEIGHBOUR_;
+    bestNeighbourLength = std::numeric_limits<size_t>::max();
     size_t tmp_length = 0;
-    for (size_t first = 1; first < path.size() - 1; ++first) {
+    for (size_t first = firstNode; first < path.size() - 1; ++first) {
         for (size_t second = first + 1; second < path.size(); ++second) {
             if (this->isOnTabuList(tabuList, {first, second})) {
                 continue;
@@ -63,7 +91,6 @@ std::pair<int, int> PathFinder::getBestNeighbour(std::vector<size_t>& path, cons
             std::swap(path[first], path[second]);
         }
     }
-    return bestNeighbour;
 }
 
 void PathFinder::updateTabuList(std::vector<std::pair<int, int>>& tabuList, const std::pair<int, int>& value, size_t& tabuCurrentIndex) {
@@ -76,7 +103,7 @@ void PathFinder::updateTabuList(std::vector<std::pair<int, int>>& tabuList, cons
 
 void PathFinder::cleanTabuList(std::vector<std::pair<int, int>>& tabuList, size_t& tabuCurrentIndex) {
     for (auto& el : tabuList) {
-        el = emptyTabuFieldValue_;
+        el = EMPTY_NEIGHBOUR_;
     }
     tabuCurrentIndex = 0;
 }
@@ -99,22 +126,24 @@ bool PathFinder::isNodeInPath(const std::vector<size_t>& path, size_t node) cons
 }
 
 void PathFinder::findBestPathThreadFunction(std::vector<size_t>& path) {
-    std::vector<std::pair<int, int>> tabuList(tabuListSize_, emptyTabuFieldValue_);
+    constexpr size_t TABU_LIST_SIZE = 7;
+    std::vector<std::pair<int, int>> tabuList(TABU_LIST_SIZE, EMPTY_NEIGHBOUR_);
     size_t tabuCurrentIndex = 0;
     this->generateInitialPath(path);
     auto bestPath = path;
-    size_t pathLength = this->getPathLength(path);
-    size_t bestPathLength = pathLength;
-
+    size_t bestPathLength = this->getPathLength(path);
+    size_t tmpPathLength;
     std::pair<int, int> bestNeighbour;
-    for (size_t i = 0; i < iterationsCount_ / threadsCount_; ++i) {
+
+    constexpr size_t ITERATIONS_COUNT = 1000;
+    for (size_t i = 0; i < ITERATIONS_COUNT / THREADS_COUNT_; ++i) {
         bestNeighbour = this->getBestNeighbour(path, tabuList);
-        if (bestNeighbour != emptyTabuFieldValue_) {
+        if (bestNeighbour != EMPTY_NEIGHBOUR_) {
             std::swap(path[bestNeighbour.first], path[bestNeighbour.second]);
             this->updateTabuList(tabuList, bestNeighbour, tabuCurrentIndex);
-            pathLength = this->getPathLength(path);
-            if (pathLength < bestPathLength) {
-                bestPathLength = pathLength;
+            tmpPathLength = this->getPathLength(path);
+            if (tmpPathLength < bestPathLength) {
+                bestPathLength = tmpPathLength;
                 bestPath = path;
             }
         } else {
@@ -126,24 +155,15 @@ void PathFinder::findBestPathThreadFunction(std::vector<size_t>& path) {
 
 std::vector<size_t> PathFinder::findBestPath() {
     threadsVector_.clear();
-    std::vector<std::vector<size_t>> paths(threadsCount_, std::vector<size_t>(distances_.size(), 0));
-    for (size_t i = 0; i < threadsCount_; ++i) {
+    std::vector<std::vector<size_t>> paths(THREADS_COUNT_, std::vector<size_t>(distances_.size(), 0));
+    for (size_t i = 0; i < THREADS_COUNT_; ++i) {
         threadsVector_.emplace_back(std::thread{&PathFinder::findBestPathThreadFunction, this, std::ref(paths[i])});
     }
     for (auto& th : threadsVector_) {
         th.join();
     }
 
-    size_t bestLengthIndex = 0;
-    size_t bestLength = this->getPathLength(paths.front());
-    size_t tmpLength;
-    for (size_t i = 1; i < paths.size(); ++i) {
-        tmpLength = this->getPathLength(paths[i]);
-        if (tmpLength < bestLength) {
-            bestLength = tmpLength;
-            bestLengthIndex = i;
-        }
-    }
-
-    return paths[bestLengthIndex];
+    return *std::min_element(paths.begin(), paths.end(), [this](auto& first, auto& second){
+        return this->getPathLength(first) < this->getPathLength(second);
+    });
 }
