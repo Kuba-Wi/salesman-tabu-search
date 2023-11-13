@@ -54,7 +54,8 @@ std::pair<int, int> PathFinder::getBestNeighbour(std::vector<size_t>& path, cons
                                                      this, 
                                                      path, 
                                                      std::ref(tabuList), 
-                                                     (path.size() / NEIGHBOUR_THREADS) * i + 1,
+                                                     (path.size() / NEIGHBOUR_THREADS) * i + (i == 0),
+                                                     (path.size() / NEIGHBOUR_THREADS) * (i + 1),
                                                      std::ref(bestNeighbourVec[i]),
                                                      std::ref(bestNeighbourLengthVec[i])});
     }
@@ -70,13 +71,14 @@ std::pair<int, int> PathFinder::getBestNeighbour(std::vector<size_t>& path, cons
 void PathFinder::getBestNeighbourThreadFunction(std::vector<size_t> path, 
                                                                const std::vector<std::pair<int, int>>& tabuList, 
                                                                size_t firstNode,
+                                                               size_t lastNode,
                                                                std::pair<int, int>& bestNeighbour,
                                                                size_t& bestNeighbourLength) {
 
     bestNeighbour = EMPTY_NEIGHBOUR_;
     bestNeighbourLength = std::numeric_limits<size_t>::max();
     size_t tmp_length = 0;
-    for (size_t first = firstNode; first < path.size() - 1; ++first) {
+    for (size_t first = firstNode; first < lastNode; ++first) {
         for (size_t second = first + 1; second < path.size(); ++second) {
             if (this->isOnTabuList(tabuList, {first, second})) {
                 continue;

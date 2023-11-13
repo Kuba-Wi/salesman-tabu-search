@@ -16,6 +16,7 @@ private:
     void getBestNeighbourThreadFunction(std::vector<size_t> path, 
                                         const std::vector<std::pair<int, int>>& tabuList, 
                                         size_t firstNode,
+                                        size_t lastNode,
                                         std::pair<int, int>& bestNeighbour,
                                         size_t& bestNeighbourLength);
 
