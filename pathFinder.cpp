@@ -45,17 +45,16 @@ bool PathFinder::isOnTabuList(const std::vector<std::pair<int, int>>& tabuList, 
 }
 
 std::pair<int, int> PathFinder::getBestNeighbour(std::vector<size_t>& path, const std::vector<std::pair<int, int>>& tabuList) {
-    constexpr size_t NEIGHBOUR_THREADS = 5;
     std::vector<std::thread> neighbourThreadsVec;
-    std::vector<std::pair<int, int>> bestNeighbourVec(NEIGHBOUR_THREADS);
-    std::vector<size_t> bestNeighbourLengthVec(NEIGHBOUR_THREADS);
-    for (size_t i = 0; i < NEIGHBOUR_THREADS; ++i) {
+    std::vector<std::pair<int, int>> bestNeighbourVec(NEIGHBOUR_THREADS_);
+    std::vector<size_t> bestNeighbourLengthVec(NEIGHBOUR_THREADS_);
+    for (size_t i = 0; i < NEIGHBOUR_THREADS_; ++i) {
         neighbourThreadsVec.emplace_back(std::thread{&PathFinder::getBestNeighbourThreadFunction, 
                                                      this, 
                                                      path, 
                                                      std::ref(tabuList), 
-                                                     (path.size() / NEIGHBOUR_THREADS) * i + (i == 0),
-                                                     (path.size() / NEIGHBOUR_THREADS) * (i + 1),
+                                                     (path.size() / NEIGHBOUR_THREADS_) * i + (i == 0),
+                                                     (path.size() / NEIGHBOUR_THREADS_) * (i + 1),
                                                      std::ref(bestNeighbourVec[i]),
                                                      std::ref(bestNeighbourLengthVec[i])});
     }
@@ -128,8 +127,7 @@ bool PathFinder::isNodeInPath(const std::vector<size_t>& path, size_t node) cons
 }
 
 void PathFinder::findBestPathThreadFunction(std::vector<size_t>& path) {
-    constexpr size_t TABU_LIST_SIZE = 7;
-    std::vector<std::pair<int, int>> tabuList(TABU_LIST_SIZE, EMPTY_NEIGHBOUR_);
+    std::vector<std::pair<int, int>> tabuList(TABU_LIST_SIZE_, EMPTY_NEIGHBOUR_);
     size_t tabuCurrentIndex = 0;
     this->generateInitialPath(path);
     auto bestPath = path;

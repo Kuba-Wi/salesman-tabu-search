@@ -27,7 +27,9 @@ private:
     void findBestPathThreadFunction(std::vector<size_t>& path);
 
     const std::pair<int, int> EMPTY_NEIGHBOUR_{-1, -1};
+    const size_t NEIGHBOUR_THREADS_ = 5;
     const size_t THREADS_COUNT_ = 5;
+    const size_t TABU_LIST_SIZE_ = 7;
 
     std::vector<std::vector<size_t>> distances_;
     std::vector<std::thread> threadsVector_;

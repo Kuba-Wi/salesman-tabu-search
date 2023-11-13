@@ -28,26 +28,22 @@ void GeneticFinder::readDistancesFromFile(const std::string& filename) {
 }
 
 std::vector<size_t> GeneticFinder::findBestPath() {
-    constexpr size_t ITERATION_COUNT = 100;
-    constexpr size_t THREADS_COUNT = 5;
-    constexpr size_t ELITE_SIZE = 1;
-
     this->generateInitialPopulation();
     std::vector<size_t> bestPath = population_.front();
     std::vector<std::vector<size_t>> newPopulation(population_.size());
     std::srand(std::time(nullptr));
 
-    for (size_t iter = 0; iter < ITERATION_COUNT; ++iter) {
-        for (size_t i = 0; i < ELITE_SIZE; ++i) {
+    for (size_t iter = 0; iter < ITERATION_COUNT_; ++iter) {
+        for (size_t i = 0; i < ELITE_SIZE_; ++i) {
             newPopulation[i] = population_[i];
         }
 
-        for (size_t i = 0; i < THREADS_COUNT; ++i) {
+        for (size_t i = 0; i < THREADS_COUNT_; ++i) {
             threadsVector_.emplace_back(&GeneticFinder::crossPathsThreadFun, 
                                         this, 
                                         std::ref(newPopulation), 
-                                        (population_.size() / THREADS_COUNT) * i + (i == 0 ? ELITE_SIZE : 0),
-                                        (population_.size() / THREADS_COUNT) * (i + 1));
+                                        (population_.size() / THREADS_COUNT_) * i + (i == 0 ? ELITE_SIZE_ : 0),
+                                        (population_.size() / THREADS_COUNT_) * (i + 1));
         }
         
         for (auto& th : threadsVector_) {
@@ -78,8 +74,7 @@ size_t GeneticFinder::getPathLength(const std::vector<size_t>& path) const {
 }
 
 void GeneticFinder::generateInitialPopulation() {
-    constexpr size_t POPULATION_SIZE = 200;
-    population_ = std::vector<std::vector<size_t>>(POPULATION_SIZE, std::vector<size_t>(distances_.size(), 0));
+    population_ = std::vector<std::vector<size_t>>(POPULATION_SIZE_, std::vector<size_t>(distances_.size(), 0));
     for (auto& path : population_) {
         this->generateInitialPath(path);
     }
