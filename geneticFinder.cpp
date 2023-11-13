@@ -105,6 +105,7 @@ bool GeneticFinder::isNodeInPath(const std::vector<size_t>& path, size_t node) c
 std::vector<size_t> GeneticFinder::crossPaths(const std::vector<size_t>& first, const std::vector<size_t>& second) const {
     size_t begin = 0, end = 0;
     do {
+        std::lock_guard lg{randMx_};
         begin = std::rand() % first.size();
         end = std::rand() % first.size();
     } while (begin == end || ((begin == 0) & (end == (first.size() - 1))));
