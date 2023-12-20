@@ -51,7 +51,8 @@ std::vector<size_t> GeneticFinder::findBestPath() {
         }
         threadsVector_.clear();
 
-        for (size_t i = 0; i < newPopulation.size() / 2; ++i) {
+        constexpr size_t mutationRate = 100;
+        for (size_t i = 0; i < newPopulation.size() / mutationRate; ++i) {
             this->mutatePath(newPopulation[std::rand() % (population_.size())]);
         }
         population_ = newPopulation;

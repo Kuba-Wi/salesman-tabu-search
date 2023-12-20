@@ -159,7 +159,7 @@ std::vector<size_t> PathFinder::findBestPath() {
     std::vector<size_t> tabuListSizes(THREADS_COUNT_);
     std::generate(tabuListSizes.begin(), tabuListSizes.end(), [i{2}]() mutable { return i++;});
     std::vector<double> neighbourSize(THREADS_COUNT_);
-    std::generate(neighbourSize.begin(), neighbourSize.end(), [i{0.4}]() mutable {
+    std::generate(neighbourSize.begin(), neighbourSize.end(), [i{0.5}]() mutable {
         i += 0.1;
         return (i > 1.0) ? 1.0 : i;
     });
