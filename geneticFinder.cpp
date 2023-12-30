@@ -58,9 +58,12 @@ std::vector<size_t> GeneticFinder::findBestPath() {
             this->mutatePath(newPopulation[std::rand() % (population_.size())]);
         }
         population_ = newPopulation;
-        this->orderPopulation();
-        if (this->getPathLength(population_.front()) < this->getPathLength(bestPath)) {
-            bestPath = population_.front();
+
+        auto shortestIt = std::min_element(population_.begin(), population_.end(), [this](auto& first, auto& second){
+            return this->getPathLength(first) < this->getPathLength(second);
+        });
+        if (this->getPathLength(*shortestIt) < this->getPathLength(bestPath)) {
+            bestPath = *shortestIt;
         }
     }
 
@@ -81,7 +84,6 @@ void GeneticFinder::generateInitialPopulation() {
     for (auto& path : population_) {
         this->generateInitialPath(path);
     }
-    this->orderPopulation();
 }
 
 void GeneticFinder::generateInitialPath(std::vector<size_t>& path) const {
@@ -144,7 +146,7 @@ void GeneticFinder::orderPopulation() {
 
 void GeneticFinder::crossPathsThreadFun(std::vector<std::vector<size_t>>& newPopulation, size_t begin, size_t end) const {
     size_t tmpParent;
-    constexpr size_t PARENTS_SIZE = 4;
+    constexpr size_t PARENTS_SIZE = 10;
     std::vector<size_t> parents(PARENTS_SIZE, std::numeric_limits<size_t>::max());
     for (size_t i = begin; i < end; ++i) {
         for (size_t index = 0; index < PARENTS_SIZE; ++index) {
@@ -163,22 +165,28 @@ void GeneticFinder::crossPathsThreadFun(std::vector<std::vector<size_t>>& newPop
     }
 
     // Roulette crossing
+    // std::unique_lock ul{populationMx_};
     // std::vector<double> probabilities(population_.size());
-    // const double sum = std::accumulate(population_.begin(), population_.end(), 0, [this](size_t sum, auto& path){
-    //     return sum + this->getPathLength(path);
+    // auto shortestIt = std::min_element(population_.begin(), population_.end(), [this](auto& first, auto& second){
+    //     return this->getPathLength(first) < this->getPathLength(second);
     // });
-    // const double diff = this->getPathLength(population_.back()) - this->getPathLength(population_.front());
+    // auto longestIt = std::max_element(population_.begin(), population_.end(), [this](auto& first, auto& second){
+    //     return this->getPathLength(first) < this->getPathLength(second);
+    // });
+    // const double diff = this->getPathLength(*longestIt) - this->getPathLength(*shortestIt);
     // for (size_t i = 0; i < population_.size(); ++i) {
-    //     probabilities[i] = (this->getPathLength(population_.back()) - this->getPathLength(population_[i])) / diff;
+    //     probabilities[i] = (this->getPathLength(*longestIt) - this->getPathLength(population_[i])) / diff;
     // }
-
+    // ul.unlock();
     // std::discrete_distribution<unsigned int> distribution(probabilities.begin(), probabilities.end());
     // std::mt19937 generator(std::random_device{}());
 
-    // size_t index = distribution(generator);
-    // auto chosenElement = population_[index];
-
     // for (size_t i = begin; i < end; ++i) {
-    //     newPopulation[i] = this->crossPaths(population_[distribution(generator)], population_[distribution(generator)]);
+    //     std::lock_guard lg(populationMx_);
+    //     randMx_.lock();
+    //     auto first = population_[distribution(generator)];
+    //     auto second = population_[distribution(generator)];
+    //     randMx_.unlock();
+    //     newPopulation[i] = this->crossPaths(first, second);
     // }
 }
