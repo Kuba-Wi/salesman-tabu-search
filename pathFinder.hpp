@@ -30,6 +30,7 @@ private:
     const size_t NEIGHBOUR_THREADS_ = 5;
     const size_t THREADS_COUNT_ = 5;
     const size_t TABU_LIST_SIZE_ = 7;
+    const size_t ITERATIONS_COUNT_ = 1000;
 
     std::vector<std::vector<size_t>> distances_;
     std::vector<std::thread> threadsVector_;

@@ -24,8 +24,9 @@ private:
     std::vector<std::vector<size_t>> population_;
     std::vector<std::thread> threadsVector_;
     mutable std::mutex randMx_;
+    mutable std::mutex populationMx_;
 
-    const size_t ITERATION_COUNT_ = 100;
+    const size_t ITERATION_COUNT_ = 50;
     const size_t THREADS_COUNT_ = 5;
     const size_t ELITE_SIZE_ = 1;
     const size_t POPULATION_SIZE_ = 200;

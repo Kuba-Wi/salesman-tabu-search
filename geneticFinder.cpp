@@ -4,6 +4,8 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <numeric>
+#include <random>
 #include <sstream>
 
 void GeneticFinder::readDistancesFromFile(const std::string& filename) {
@@ -141,14 +143,42 @@ void GeneticFinder::orderPopulation() {
 }
 
 void GeneticFinder::crossPathsThreadFun(std::vector<std::vector<size_t>>& newPopulation, size_t begin, size_t end) const {
-    size_t firstParent, secondParent;
+    size_t tmpParent;
+    constexpr size_t PARENTS_SIZE = 4;
+    std::vector<size_t> parents(PARENTS_SIZE, std::numeric_limits<size_t>::max());
     for (size_t i = begin; i < end; ++i) {
-        do {
+        for (size_t index = 0; index < PARENTS_SIZE; ++index) {
+            do {
             std::lock_guard lg{randMx_};
-            firstParent = std::rand() % (population_.size() / 2);
-            secondParent = std::rand() % (population_.size() / 2);
-        } while (firstParent == secondParent);
+            tmpParent = std::rand() % (population_.size());
+            } while (std::any_of(parents.begin(), parents.end(), [=](auto n){ return n == tmpParent; }));
+            parents[index] = tmpParent;
+        }
 
-        newPopulation[i] = this->crossPaths(population_[firstParent], population_[secondParent]);
+        std::lock_guard lg{populationMx_};
+        std::sort(parents.begin(), parents.end(), [this](auto& first, auto& second){
+            return this->getPathLength(population_[first]) < this->getPathLength(population_[second]);
+        });
+        newPopulation[i] = this->crossPaths(population_[parents[0]], population_[parents[1]]);
     }
+
+    // Roulette crossing
+    // std::vector<double> probabilities(population_.size());
+    // const double sum = std::accumulate(population_.begin(), population_.end(), 0, [this](size_t sum, auto& path){
+    //     return sum + this->getPathLength(path);
+    // });
+    // const double diff = this->getPathLength(population_.back()) - this->getPathLength(population_.front());
+    // for (size_t i = 0; i < population_.size(); ++i) {
+    //     probabilities[i] = (this->getPathLength(population_.back()) - this->getPathLength(population_[i])) / diff;
+    // }
+
+    // std::discrete_distribution<unsigned int> distribution(probabilities.begin(), probabilities.end());
+    // std::mt19937 generator(std::random_device{}());
+
+    // size_t index = distribution(generator);
+    // auto chosenElement = population_[index];
+
+    // for (size_t i = begin; i < end; ++i) {
+    //     newPopulation[i] = this->crossPaths(population_[distribution(generator)], population_[distribution(generator)]);
+    // }
 }

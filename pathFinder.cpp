@@ -135,8 +135,7 @@ void PathFinder::findBestPathThreadFunction(std::vector<size_t>& path, size_t ta
     size_t tmpPathLength;
     std::pair<int, int> bestNeighbour;
 
-    constexpr size_t ITERATIONS_COUNT = 1000;
-    for (size_t i = 0; i < ITERATIONS_COUNT / THREADS_COUNT_; ++i) {
+    for (size_t i = 0; i < ITERATIONS_COUNT_ / THREADS_COUNT_; ++i) {
         bestNeighbour = this->getBestNeighbour(path, tabuList, neighbourSize);
         if (bestNeighbour != EMPTY_NEIGHBOUR_) {
             std::swap(path[bestNeighbour.first], path[bestNeighbour.second]);
@@ -156,13 +155,16 @@ void PathFinder::findBestPathThreadFunction(std::vector<size_t>& path, size_t ta
 std::vector<size_t> PathFinder::findBestPath() {
     threadsVector_.clear();
     std::vector<std::vector<size_t>> paths(THREADS_COUNT_, std::vector<size_t>(distances_.size(), 0));
+
     std::vector<size_t> tabuListSizes(THREADS_COUNT_);
     std::generate(tabuListSizes.begin(), tabuListSizes.end(), [i{2}]() mutable { return i++;});
-    std::vector<double> neighbourSize(THREADS_COUNT_);
+
+    std::vector<double> neighbourSize(THREADS_COUNT_);      //percentage of full neighbourhood for every thread
     std::generate(neighbourSize.begin(), neighbourSize.end(), [i{0.5}]() mutable {
         i += 0.1;
         return (i > 1.0) ? 1.0 : i;
     });
+
     for (size_t i = 0; i < THREADS_COUNT_; ++i) {
         threadsVector_.emplace_back(std::thread{&PathFinder::findBestPathThreadFunction, this, std::ref(paths[i]), tabuListSizes[i], neighbourSize[i]});
     }
