@@ -40,13 +40,19 @@ std::vector<size_t> GeneticFinder::findBestPath() {
             newPopulation[i] = population_[i];
         }
 
-        for (size_t i = 0; i < THREADS_COUNT_; ++i) {
+        for (size_t i = 0; i < THREADS_COUNT_ - 1; ++i) {
             threadsVector_.emplace_back(&GeneticFinder::crossPathsThreadFun, 
                                         this, 
                                         std::ref(newPopulation), 
                                         (population_.size() / THREADS_COUNT_) * i + (i == 0 ? ELITE_SIZE_ : 0),
                                         (population_.size() / THREADS_COUNT_) * (i + 1));
         }
+
+        threadsVector_.emplace_back(&GeneticFinder::crossPathsThreadFun, 
+                                    this, 
+                                    std::ref(newPopulation), 
+                                    (population_.size() / THREADS_COUNT_) * (THREADS_COUNT_ - 1),
+                                    population_.size());
         
         for (auto& th : threadsVector_) {
             th.join();
@@ -72,7 +78,7 @@ std::vector<size_t> GeneticFinder::findBestPath() {
 
 size_t GeneticFinder::getPathLength(const std::vector<size_t>& path) const {
     size_t length = 0;
-    for (size_t i = 0; i < path.size() - 1; ++i) {
+    for (int i = 0; i < int(path.size()) - 1; ++i) {
         length += distances_[path[i]][path[i + 1]];
     }
     length += distances_[path.front()][path.back()];
